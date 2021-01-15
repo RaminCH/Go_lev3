@@ -1,0 +1,10 @@
+%> wget https://github.com/ktr0731/evans/releases/download/0.8.3/evans_linux_amd64.tar.gz
+[..snip..]
+%> tar xvf evans_linux_amd64.tar.gz 
+LICENSE
+README.md
+evans
+%> mv evans ~/bin/ 
+%> file ~/bin/evans 
+/home/artanicus/bin/evans: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), statically linked, not stripped
+%> evans -r

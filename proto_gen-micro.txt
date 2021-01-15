@@ -1,0 +1,10 @@
+// This installs protoc
+sudo apt install protobuf-compiler
+export GO111MODULE=on
+// This installs $GOPATH/bin/protoc-gen-micro
+go get github.com/micro/micro/v2/cmd/protoc-gen-micro@master
+// This installs $GOPATH/bin/protoc-gen-go
+go get -u github.com/golang/protobuf/protoc-gen-go
+
+Then:
+export PATH=$GOPATH/bin:$PATH

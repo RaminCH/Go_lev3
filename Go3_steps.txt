@@ -1,0 +1,2193 @@
+Go3
+
+Day1 25.08.2020
+
+*************************lec2
+
+Beginnig with the installation of Docker via creation of instructions.sh file:
+
+---------------------------------------------------
+👉️instructions.sh
+👇️
+#!/bin/bash
+
+# run this command in terminal before chmod +x instruction.sh
+sudo apt-get update
+#git
+sudo apt install git
+#vscode
+sudo snap install --classic code
+#docker 
+sudo apt-get update
+
+
+sudo apt-get install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg-agent \
+    software-properties-common
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+
+sudo apt-key fingerprint 0EBFCD88
+
+
+
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+
+
+sudo apt update
+
+apt-cache policy docker-ce
+
+
+sudo apt-get install docker-ce docker-ce-cli containerd.io
+
+#Docker verificator
+sudo docker run hello-world
+
+
+---------------------------------------------------
+
+👇️then changing file permission:
+chmod +x instruction.sh
+
+👈️ and runnig in terminal -> ./instruction.sh ------> hello-world image should be downloaded 
+
+***IF ./instruction.sh DIDN't WORK install DOCKER🐋️ MANUALLY VIA:
+👉️sudo snap install docker
+
+👉️docker -v
+
+	Docker version 18.06.1-ce, build e68fc7a
+
+👉️sudo docker version
+👇️THEN:
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec2$ sudo docker run hello-world	👈️
+
+			Hello from Docker!
+			This message shows that your installation appears to be working correctly.	😎️
+
+			To generate this message, Docker took the following steps:
+			 1. The Docker client contacted the Docker daemon.
+			 2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
+			    (amd64)
+			 3. The Docker daemon created a new container from that image which runs the
+			    executable that produces the output you are currently reading.
+			 4. The Docker daemon streamed that output to the Docker client, which sent it
+			    to your terminal.
+
+			To try something more ambitious, you can run an Ubuntu container with:
+			 $ docker run -it ubuntu bash
+
+			Share images, automate workflows, and more with a free Docker ID:
+			 https://hub.docker.com/
+
+			For more examples and ideas, visit:
+			 https://docs.docker.com/get-started/
+
+
+☝️ sudo docker run hello-world -> should appear lines like above where indicated that all work properly🙌️
+
+🐋️ sudo docker images -> shows images
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec2$ sudo docker images
+[sudo] password for ramin: 
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+hello-world         latest              bf756fb1ae65        10 months ago       13.3kB
+
+
+
+
+👇️
+now: creating main.go --> we will create simple logic to create 1st Docker file and push to Dockerhub
+
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+)
+
+//SayHello ...
+func SayHello(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Hello world from docker!")
+}
+
+//SayGoodbye ...
+func SayGoodbye(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Goodbye from docker!")
+}
+
+func main() {
+
+	fmt.Println("Server runs...")
+	http.HandleFunc("/hello", SayHello)
+	http.HandleFunc("/bye", SayGoodbye)
+
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+
+Output:
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec2$ go run main.go
+Server runs...
+
+http://localhost:8080/hello ---> Hello world from docker!	👈️			☝️Running before creating Dockerfile to check if it works
+http://localhost:8080/bye   ---> Goodbye from docker!
+
+
+
+👇️ Now creating 🐋️Dockerfile (ineffective and rude one)
+
+# Opredelayem bazoviy obraz
+FROM golang:latest 
+
+# Sozdayem direktoriyu /app
+RUN mkdir /app
+
+# Dublirovaniye vsey nachinki direktorii (lec2) - ne effektivno 
+ADD . /app
+
+# Vibirayem rabochuyu direktoriyu
+WORKDIR /app
+
+# (-o <name> - sozdat ispolnayemiy fayl s nazvaniyem <name>)
+RUN go build -o main .							#or☝️RUN go build -o main2 .
+
+CMD ["/app/main"]							#or☝️CMD ["/app/main2"]	and so forth
+
+
+☝️now in terminal : ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec2$ sudo docker build -t tester .	👈️🐋️ (-t mean name) (. mean all from current directory)
+👇️
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec2$ sudo docker build -t tester .
+Sending build context to Docker daemon  4.608kB
+Step 1/6 : FROM golang:latest
+latest: Pulling from library/golang
+756975cb9c7e: Pull complete 
+d77915b4e630: Pull complete 
+5f37a0a41b6b: Pull complete 
+96b2c1e36db5: Pull complete 
+145393847161: Pull complete 
+71dfa979a65c: Pull complete 
+88a83f11b30a: Pull complete 
+Digest: sha256:cf46c759511d0376c706a923f2800762948d4ea1a9290360720d5124a730ed63
+Status: Downloaded newer image for golang:latest
+ ---> 6d8772fbd285
+Step 2/6 : RUN mkdir /app
+ ---> Running in a78b235fbcb7
+Removing intermediate container a78b235fbcb7
+ ---> fad419be79f3
+Step 3/6 : ADD . /app
+ ---> 2ceb133bdb95
+Step 4/6 : WORKDIR /app
+ ---> Running in f894429c022e
+Removing intermediate container f894429c022e
+ ---> 215fd6a957cd
+Step 5/6 : RUN go build -o main .
+ ---> Running in 8f0bdc37eaea
+Removing intermediate container 8f0bdc37eaea
+ ---> ce796831b42a
+Step 6/6 : CMD ["/app/main"]
+ ---> Running in 2439f07c951e
+Removing intermediate container 2439f07c951e
+ ---> 56173ac34cd9
+Successfully built 56173ac34cd9
+Successfully tagged tester:latest
+
+
+☝️now in terminal : sudo docker images -----> 🐋️ we should see tester image 😎️
+👇️
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec2$ sudo docker images
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+tester              latest              56173ac34cd9        48 seconds ago      845MB		👈️
+golang              latest              6d8772fbd285        6 days ago          839MB
+hello-world         latest              bf756fb1ae65        10 months ago       13.3kB
+
+
+☝️now running our tester: sudo docker run -p 8000:8080 -it tester 	-----> 🐋️(8000 is localhost), (8080 is our container(check main.go)),  (-it is interactive mode)
+👇️
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec2$ sudo docker run -p 8000:8080 -it tester		👈️
+Server runs...
+			      👇️
+☝️now in browser: localhost:8000/bye --> we get Goodbye from docker!
+
+
+👇️
+Now going to dockerhub -> press 'Create Repository' -> name 'first_image' and press create ->
+
+👉️Now in terminal: sudo docker login
+👇️ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec2$ sudo docker login
+Login with your Docker ID to push and pull images from Docker Hub. If you don't have a Docker ID, head over to https://hub.docker.com to create one.
+Username: raminch
+Password: 
+WARNING! Your password will be stored unencrypted in /root/snap/docker/471/.docker/config.json.
+Configure a credential helper to remove this warning. See
+https://docs.docker.com/engine/reference/commandline/login/#credentials-store
+
+Login Succeeded
+
+👉️Now in terminal: sudo docker build -t RaminCH/first_image .	👈️ renaming our image 'tester' for 'raminch/first_image' like we created in dockerhub
+👇️ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec2$ sudo docker build -t raminch/first_image .
+Sending build context to Docker daemon  4.608kB
+Step 1/6 : FROM golang:latest
+ ---> 6d8772fbd285
+Step 2/6 : RUN mkdir /app
+ ---> Using cache
+ ---> fad419be79f3
+Step 3/6 : ADD . /app
+ ---> Using cache
+ ---> 2ceb133bdb95
+Step 4/6 : WORKDIR /app
+ ---> Using cache
+ ---> 215fd6a957cd
+Step 5/6 : RUN go build -o main .
+ ---> Using cache
+ ---> ce796831b42a
+Step 6/6 : CMD ["/app/main"]
+ ---> Using cache
+ ---> 56173ac34cd9
+Successfully built 56173ac34cd9
+Successfully tagged raminch/first_image:latest
+ 
+
+👉️Now checking if RaminCH/first-image is created as an image: sudo docker images 
+👇️ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec2$ sudo docker images
+REPOSITORY            TAG                 IMAGE ID            CREATED             SIZE
+tester                latest              56173ac34cd9        7 minutes ago       845MB
+raminch/first_image   latest              56173ac34cd9        7 minutes ago       845MB			👈️😎️
+golang                latest              6d8772fbd285        6 days ago          839MB
+hello-world           latest              bf756fb1ae65        10 months ago       13.3kB
+
+👉️Now pushing to dockerhub: sudo docker push RaminCH/first_image:latest			🐋️latest got from 'sudo docker images' TAG column
+👇️ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec2$ sudo docker push raminch/first_image:latest
+The push refers to repository [docker.io/raminch/first_image]
+d19ea40e187f: Pushed 
+8aedde0d7f08: Pushed 
+feb4b00752be: Pushed 
+1da97c0d0d9a: Mounted from library/golang 
+965799853136: Mounted from library/golang 
+f8c12e32a9e6: Mounted from library/golang 
+712264374d24: Mounted from library/golang 
+475b4eb79695: Mounted from library/golang 
+f3be340a54b9: Mounted from library/golang 
+114ca5b7280f: Mounted from library/golang 
+latest: digest: sha256:b41e077f8f8127eb11a21d33fdcf12d8a6a88ad2c7edff50e4c1a039d5fcc03b size: 2420	😎️
+
+
+Now in dockerhub should be uploaded
+To pull project: copy the link in dockerhub and '(paste here link)' should start with docker pull 🐋️   	Done!😎️
+
+********************************************************************************************************************
+
+Day2
+
+gRPC - Remote procedure call	👈️
+In distributed computing, a remote procedure call is when a computer program causes a procedure to execute in a different address space, which is coded as if it were a normal procedure call, without the programmer explicitly coding the details for the remote interaction
+
+Удалённый вызов процедур, реже Вызов удалённых процедур (от англ. Remote Procedure Call, RPC) — класс технологий, позволяющих компьютерным программам вызывать функции или процедуры в другом адресном пространстве (на удалённых компьютерах, либо в независимой сторонней системе на том же устройстве). Обычно реализация RPC-технологии включает в себя два компонента: сетевой протокол для обмена в режиме клиент-сервер и язык сериализации объектов (или структур, для необъектных RPC)
+ Различные реализации RPC имеют очень отличающуюся друг от друга архитектуру и разнятся в своих возможностях: одни реализуют архитектуру SOA, другие — CORBA или DCOM. На транспортном уровне RPC используют в основном протоколы TCP и UDP, однако, некоторые построены на основе HTTP (что нарушает архитектуру ISO/OSI, так как HTTP — изначально не транспортный протокол)
+
+☝️Существует множество технологий, обеспечивающих RPC:  
+
+	DCE/RPC — Distributed Computing Environment / Remote Procedure Calls (бинарный протокол на базе различных транспортных протоколов, в том числе TCP/IP и Named Pipes из протокола SMB/CIFS)
+	DCOM — Distributed Component Object Model, известный как MSRPC Microsoft Remote Procedure Call или «Network OLE» (объектно-ориентированное расширение DCE RPC, позволяющее передавать ссылки на объекты и вызывать методы объектов через таковые ссылки)
+	ZeroC ICE
+	JSON-RPC— JavaScript Object Notation Remote Procedure Calls (текстовый протокол на базе HTTP) см. спецификацию: RFC-4627
+	.NET Remoting (бинарный протокол на базе TCP, UDP, HTTP)
+	Java RMI — Java Remote Method Invocation — см. спецификацию: http://java.sun.com/j2se/1.5.0/docs/guide/rmi/index.html
+	SOAP — Simple Object Access Protocol (текстовый протокол на базе HTTP) см. спецификацию: RFC-4227
+	Sun RPC (бинарный протокол на базе TCP и UDP и XDR) RFC-1831 второе название — ONC RPC RFC-1833
+	XML RPC (текстовый протокол на базе HTTP) см. спецификацию: RFC-3529
+
+
+V otlichiye ot REST kotoriy ispolzuyet http1.1 kotoriy v osnovnom obmenivayetsa faylami v JSON formate.
+s http1.1 zatrudnitelno rabotat yesli nujni visokonagrujenniye ili razvetvlenniye servisi tak kak vmeste s JSON/body content-om otpravlayetsa mnogo info o kodirovke, byte strok, pro razlichniye sistemniye configs, pro raspinovki, i mnogo dopolnitelnix veshey - to yest klassicheskiy http1.1 prikruchivayet k kontentu kolossalnoye kolichestvo nenujnogo musora. K tomu je propusknaya sposobnost http1.1 ogranichena - ne boleyee opredelennogo kolichestva zaprosov v sekundu.
+
+v http2 mi obmenivayemsa binarizovannimi dannimi - bytovoy posledovatelnostyu(tak kak legko kodiruyutsa i dekodiruyutsa)
+
+REST napisanniy na odnom yazike nujno perepisivat na drugoy yazik, a gRPC project dosttochno peredat kontrakt i on avtomatom dast vse na drugoy yazik
+
+
+✋️PROTOBUF AND GRPC!	
+	*Snachala sozdayem Protobuf -> chat.proto (eto nekiy universalniy kontrakt)
+	*Dalee kompiliruyem na yego osnove fayl chat.pb.go (see command below)-> gde go eto nash yazik , takje mojno dla pochti vsex yazikov sdelat chat.pb.cpp etc...
+	*NIKOGDA NE IZMENAYEM pb FAYL vnutri!!!!!!!!
+✋️
+
+
+👇️
+sozdayem lec3
+
+Protocol Buffer - sposob kontaktirovaniya/kontraktirovaniya razlichnix pod/kod baz vnutri texnologii RPC	🙌️
+
+
+sozdayem fayl chat.proto 	//chat -> proizvolnoye nazvaniye nahsey logiki:
+
+
+		👉️		syntax = "proto3"; 			//3 versiya protokolirovaniya
+				package chat;      			// chat  - nazvaniye nashego protokolirovaniya
+
+				message Message {  			// message - eto vnutrenniy obyekt s nazvaniyem Message
+				    string body = 1;    		//1-m delom opredelim pole - string s nazvaniyem body kot. ravno 1
+				}
+
+				//Dalshe propisivayem kak budut ustroyeni nashi servisi
+
+				service ChatService {
+				    rpc SayHello(Message) returns(Message) {} 
+				}
+
+				    //v moyem service, kot. xochu razrabotat na osnove texnologii rpc, doljna bit realizovana
+				    //funksiya SayHello, kotoraya budet prinimat soobsheniye a na vixod davat toje soobsheniye a soobsheniye pod soboy podrazumevayet
+				    //nekoye strokovoye pole s nazvaniyem body pod nomerom 1
+
+
+👇️
+// dla ustanovki protobuf - v terminale: sudo snap install protobuf --classic
+
+// ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec3$ sudo snap install protobuf --classic
+// [sudo] password for ramin: 
+// snap "protobuf" is already installed, see 'snap help refresh'
+
+		👉️ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC$ cd lec3/
+		ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec3$ sudo snap install protobuf --classic  👈️
+		[sudo] password for ramin: 
+		snap "protobuf" is already installed, see 'snap help refresh'
+
+		👉️ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec3$ dir 
+		chat.proto								//v lec3 naxoditsa tolko FAYL KONTRAKTER NE PRIVAZANNIY NI K ODNOMU YAZIKU PROG-YA
+
+
+protoc -> proto compiler
+-I . -> vse fayli nax. v tekushey direktorii
+--go_out= -> na osnove kakogo yazika delay vixodniye fayli			✋️--go_out=  for Go/--cpp_out= for c++/ --py_out= for Puthon etc...✋️
+plugins=grpc: -> plagini grpc
+. -> otkuda fayli vzat
+./*.proto -> vse fayli s rasshireniyem proto ( u nas yest chat.proto )
+
+👉️ ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec3$ protoc -I . --go_out=plugins=grpc:. ./*.proto 	👈️
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec3$ 	👈️if empty -> successfull
+
+👉️Now in vscode should appear file: chat.pb.go 	->☝️ proto file version with Golang extension
+
+
+☝️ v chat.pb.go
+
+	1.👇️nasha struktura protranslirovannaya v Go
+	type Message struct {
+		Body string `protobuf:"bytes,1,opt,name=body" json:"body,omitempty"`		
+	}
+
+	2.👇️za nas generiruyetsa nabor standartnix metodov kotoriye budut ispolzovaysa v translite RPC
+
+	func (m *Message) Reset()                    { *m = Message{} }			
+	func (m *Message) String() string            { return proto.CompactTextString(m) }
+	func (*Message) ProtoMessage()               {}
+	func (*Message) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+
+	3.👇️ I posle vsego etogo nam nujno budet sozdat SayHello, kotoriy kladetsa na nashi plechi
+
+	type ChatServiceClient interface {
+		SayHello(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Message, error)
+	}
+
+	4.
+
+
+👉️Now adding SayGoodBye and title field to chat.proto (title will be deleted later, it has only educational character)
+
+
+syntax = "proto3"; 
+package chat;      
+
+message Message {  
+    string body = 1;    
+    string title = 2;	👈️
+}
+
+service ChatService {
+    rpc SayHello(Message) returns(Message) {}
+    rpc SayGoodBye(Message) returns(Message) {} 👈️
+}
+
+Now:
+
+	1.
+	type Message struct {
+		Body  string `protobuf:"bytes,1,opt,name=body" json:"body,omitempty"`
+		Title string `protobuf:"bytes,2,opt,name=title" json:"title,omitempty"`
+	}
+
+	2.
+	func (m *Message) Reset()                    { *m = Message{} }
+	func (m *Message) String() string            { return proto.CompactTextString(m) }
+	func (*Message) ProtoMessage()               {}
+	func (*Message) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+
+	3.														👇️chat.proto
+	type ChatServiceClient interface {										service ChatService {
+		SayHello(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Message, error)	👈️prevrash.		rpc SayHello(Message) returns(Message) {}
+		SayGoodBye(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Message, error)				rpc SayGoodBye(Message) returns(Message) {} 
+	}														}
+
+	4. zdes doljni bili bit neopredelenniye metodi SayHello i SayGoodBye (not implemented)
+
+
+👇️
+Now: udalayem 'string title = 2;'
+ctrl+s and ->
+->
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec3$ protoc -I . --go_out=plugins=grpc:. ./*.proto		👈️pereopredelayem pb file
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec3$ 
+
+
+And let's begin!
+
+1.creating 'chat' folder and moving 'chat.pb.go' there 
+2.creating main.go 👇️
+
+	package main
+
+	import (
+		"log"
+		"net"
+	)
+
+	func main() {
+		listener, err := net.Listen("tcp", ":8000")
+		if err != nil {
+			log.Fatalf("failed to listen from port: %v", err)
+		}
+	}
+
+3.downloading adapter for Go to work with gRPC 👇️ In go/src:
+ramin@raminhost:~/go/src$ go get -u github.com/golang/protobuf/protoc-gen-go 👈️👈️☝️
+package github.com/golang/protobuf/protoc-gen-go: /home/ramin/go/src/github.com/golang/protobuf exists but /home/ramin/go/src/github.com/golang/protobuf/.git does not - stale checkout? 👉️ I already have!? Now👇️
+
+👉️Solution: ☝️delete in src: google.golang.org
+ramin@raminhost:~/go/src$ go get github.com/golang/protobuf/protoc-gen-go
+ramin@raminhost:~/go/src$ 
+
+
+
+4.sozdayem v papke 'chat' fle -> chat.go , kotoriy budet vzaimodeystvovat s 'chat.pb.go'
+👇️
+package chat
+
+import (
+	context "context"
+	"log"
+)
+
+//Server
+type Server struct {
+	//...
+}
+
+//importing both SayHello and SayGoodBye from chat.pb.go -> type ChatServiceServer interface
+//SayHello...
+func (s *Server) SayHello(ctx context.Context, in *Message) (*Message, error) {
+	log.Printf("Received message body from client: %s", in.Body) //Body is in the type Message struct {... in chat.pb.proto
+	return &Message{Body: "Hello from this server!"}, nil        // Message struct is in the chat.pb.proto -> type Message struct {..
+}
+
+//SayGoodBye...
+func (s *Server) SayGoodBye(ctx context.Context, in *Message) (*Message, error) {
+	log.Printf("Received message body from client: %s", in.Body)
+	return &Message{Body: "GoodBye from this server"}, nil
+}
+
+
+
+5.V main.go dopisivayem:👇️
+
+package main
+
+import (
+	"fmt"
+	"log"
+	"net"
+
+	"github.com/RaminCH/go3_grpc/Lec3/chat"
+	"google.golang.org/grpc"
+)
+
+func main() {
+
+	fmt.Println("Starting gRPC server...")	👈️
+
+	listener, err := net.Listen("tcp", ":8000")
+	if err != nil {
+		log.Fatalf("failed to listen from port: %v", err)
+	}
+
+	//Our Service
+	serv := chat.Server{} 👈️// nash servis kotoriy umeyet delat te deystviya kotoriye propisani v kontrakte(chat.proto-> service ChatService {...)
+	//pochemu mi mojem utverjdat chto on mojet vipolnat deystviya SayHello i SaygoodBye v kontrakte, potomu chto mi v ruchnuyu
+	//v chat.go propisali eti metodi(Sayhe.. Saygood..), chtobi serv udovletvoral interfeysu -> type ChatServiceServer interface
+	// v chat.pb.go
+
+	//basic gRPC server
+	grpcServer := grpc.NewServer() //grpc server (grubo govora - eto router kak v REST)
+
+	//Assotsiiiruyem gRPC server s nashim servisom(serv)
+	chat.RegisterChatServiceServer(grpcServer, &serv)	👈️
+
+	if err := grpcServer.Serve(listener); err != nil {
+		log.Fatalf("failed to serve with that point: %s", err)
+	}
+
+}
+
+
+
+*****Bili errors s kotorimi ya spravilsa->
+V samom nachale sozdal papku v github -> 'RaminCH/simplest_gRPC_SayHello'
+zakinul soderjimoye tuda
+
+zatem bilo eto:
+ramin@raminhost:~/go/src$ go get github.com/golang/protobuf/protoc-gen-go	👈️ne zagrujalsa
+package google.golang.org/protobuf/compiler/protogen: /home/ramin/go/src/google.golang.org/protobuf exists but /home/ramin/go/src/google.golang.org/protobuf/.git does not - stale checkout?
+
+👉️Ya udalil papku google.golang.org v papke src
+🙌️go get github.com/golang/protobuf/protoc-gen-go -> zagruzilsa -> snova poyavilas v src papka google.golang.org (no tolko s papkoy protobuf bez papki grpc) 
+
+potom ne zagrujalsa grpc kogda xotel zapustit main.go v proyekte:
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec3 (master)$ go run main.go	👈️
+../../../RaminCH/go3_grpc/Lec3/chat/chat.pb.go:10:2: cannot find package "google.golang.org/grpc" in any of:
+	/usr/local/go/src/google.golang.org/grpc (from $GOROOT)
+	/home/ramin/go/src/google.golang.org/grpc (from $GOPATH)
+../../../RaminCH/go3_grpc/Lec3/chat/chat.pb.go:11:2: cannot find package "google.golang.org/grpc/codes" in any of:
+	/usr/local/go/src/google.golang.org/grpc/codes (from $GOROOT)
+	/home/ramin/go/src/google.golang.org/grpc/codes (from $GOPATH)
+../../../RaminCH/go3_grpc/Lec3/chat/chat.pb.go:12:2: cannot find package "google.golang.org/grpc/status" in any of:
+	/usr/local/go/src/google.golang.org/grpc/status (from $GOROOT)
+	/home/ramin/go/src/google.golang.org/grpc/status (from $GOPATH)
+
+reshil: 
+ramin@raminhost:~/go/src$ go get -u google.golang.org/grpc		🙌️😎️
+package golang.org/x/sys/unix: golang.org/x/sys is a custom import path for https://go.googlesource.com/sys, but /home/ramin/go/src/golang.org/x/sys is checked out from https://github.com/golang/sys.git
+
+🙌️ v papke google.golang.org poyavilas grpc i daje genproto 😎️
+
+
+
+main.go zapustilsa:
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec3 (master)$ go run main.go
+Starting gRPC server...		🙌️Bingo!
+
+
+
+👉️Teper sozdayem papku 'client' i v ney sozdayem 'client.go'
+👇️
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	"github.com/RaminCH_self/Go3_gRPC/lec3/chat"
+	"google.golang.org/grpc"
+)
+
+func main() {
+	fmt.Println("Client starting ...")
+
+	var conn *grpc.ClientConn													👈️
+
+	conn, err := grpc.Dial(":8000", grpc.WithInsecure()) //soyedinayemsa k portu servera (on toje 8000)				👈️
+	if err != nil {
+		log.Fatalf("cannot connect to: %v", err)
+	}
+
+	defer conn.Close() //client mojet podkluchatsa i otkluchatsa									👈️
+
+	cli := chat.NewChatServiceClient(conn) //sozdayem obyekt-(kliyent) kotorogo soyedinayem k portu 8000				👈️
+	//NewChatServiceClient iz chat.pb.go gde on realizovivayet takje Sayhello i SayGoodbye
+
+	//Dergayem Sayhello s servera													👈️
+	resp, err := cli.SayHello(context.Background(), &chat.Message{Body: "Hello from Client!"}) //message from client to server	➡️to server
+	if err != nil {
+		log.Fatalf("Error when SayHello: %s", err)
+	}
+	log.Printf("Response from Server: %s", resp.Body) //response from server							⬅️from server
+
+	//Dergayem SayGoodBye u servera ot client-a											👈️
+	resp, err = cli.SayGoodBye(context.Background(), &chat.Message{Body: "GoodBye from Client!"}) //message from client to server	➡️
+	if err != nil {
+		log.Fatalf("Error when SayGoodBye: %s", err)
+	}
+	log.Printf("Response from Server: %s", resp.Body) //response from server							⬅️
+}
+
+
+
+☝️now open 2 terminals in current project(lec3)	☝️server runs 1st, client-2nd and automatically 1st signal(hello message) sent by client
+
+	1.		ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec3 (master)$ go run main.go	👈️
+			Starting gRPC server...
+
+	2.		ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec3/client (master)$ go run client.go 👈️
+		      ☝️Client starting ...
+			2020/11/27 01:25:48 Response from Server: Hello from this server!	⬅️ 2. replying to client (here receives client)
+			2020/11/27 01:25:48 Response from Server: GoodBye from this server!	⬅️ 4. replying to client (here receives client)
+
+	3.		ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec3 (master)$ go run main.go
+		      ☝️Starting gRPC server...
+			2020/11/27 01:25:48 Receive message body from client: Hello from Client!➡️ 1.receiving 1st message from client (here receives server)
+			2020/11/27 01:25:48 Recive message body from client: GoodBye from Client!➡️ 3. receiving 2nd message from client (here receives server)
+
+		
+
+Plus gRPC v tom chto mi mojem clienta sobrat na c++ a server na go ☝️😎️
+
+********************************************************************************************************************************
+
+day3 - 27.08.2020
+
+👉️creating 'proto' folder inside 'proto' creating 'consigment' folder and inside 'consigment' folder -> creating file -> consigment.proto
+👇️
+syntax = "proto3";
+
+package consignment;
+//Обозначение именованного набора полей
+message Request {
+    //тип имя = номер поля;
+    string body = 1; 
+    int32 age = 2; //тип целый 32 разр //go -> int32
+    int64 salary = 3; // тип целый 64 разр // go -> int64
+
+}
+
+message Response {
+    double my_double = 1; //go -> float64
+    float my_float = 2; //go -> float32 
+
+    uint32 my_uint32 = 3; // go -> uint32
+    uint64 my_uint64 = 4; //go -> iont64
+
+    fixed32 my_fixed32 =5; // Поле для хранения байтовых последовательности с разрядом до 32 //go -> uint32
+
+    bool my_bool = 6; // go -> bool 
+    string my_string = 7; // go -> string //proto2 go -> []byte
+
+    bytes my_bytes = 8; //go -> []byte
+    //Строго нумерация с нуля!
+    enum Things {
+        FIRST = 0;
+        SECOND = 1;
+        THIRD = 3;
+        FOURTH = 4;
+    }
+    Things things = 9;
+    Request req = 10;
+
+    repeated Request snippet = 11;//go -> []Request
+
+
+}
+
+message OuterSearcher {
+    message InnerSearcher {
+        int32 code = 1;
+        string url = 2;
+    }
+    repeated InnerSearcher result = 1;
+}
+
+message AnotherSeacher {
+    OuterSearcher.InnerSearcher result = 1;
+}
+
+message TimeDate {
+    int32 year = 1;
+    int32 month = 2;
+    int32 day = 3;
+    int32 hour = 4;
+}
+
+//Создаем сервис
+service TestService {
+    //Можно передать в качестве аргумента что-то, а можно и ничего
+    rpc HttpGET(Request) returns (Response) {}
+    rpc HttpPOST(Request) returns (Response) {}
+    rpc CurrentTime(TimeDate) returns (TimeDate) {}
+}
+
+👉️then in terminal:
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec4$ protoc -I. --go_out=plugins=grpc:. proto/consigment/consigment.proto
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec4$ 								      😎️success -> created-> consigment.pb.go
+
+
+
+
+***********************************************************************************************
+
+creating lec5
+
+creating folder lec5
+
+inside creating folders 'client' & 'server' 
+
+inside 'server' creating folder 'proto' and inside 'proto' -> 'consigment' folder -> inside 'consigment' folder -> consigment.proto file
+
+👇️consigment.proto
+
+syntax = "proto3";
+
+package consigment;
+
+message Container {
+    string id = 1; 
+    string customer_id = 2; 
+    string origin = 3;  //destination
+    string user_id = 4; //who transported
+}
+
+message Command {
+    string id = 1;
+    string description = 2;
+    int32 weight = 3;   // container weight
+    repeated Container containers = 4;
+    string vessel = 5;  //delivering ship
+}
+
+
+message Response {
+    bool created = 1;
+    Command command = 2;
+}
+
+service ShippingService {
+    rpc CreateCommand(Command) returns(Response) {}
+}
+
+👉️then in terminal command: 
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec5/server$ protoc -I. --go_out=plugins=grpc:. proto/consigment/consigment.proto	
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec5/server$ 										😎️
+
+
+👉️there should appear 'consigment.pb.go' file
+
+
+👉️now in 'server' folder creating 'main.go' file 		
+
+🙌️created git project -> 'RaminCH/grpc_containers'
+
+👉️!!!
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec5/server (master)$ go mod init		👈️!
+go: creating new go.mod: module github.com/RaminCH_self/Go3_gRPC/lec5/server
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec5/server (master)$ go get -u		👈️!
+go: finding module for package github.com/RaminCH/lec5/server/proto/consigment
+go: finding module for package google.golang.org/grpc
+go: finding module for package google.golang.org/grpc/reflection
+go: found google.golang.org/grpc in google.golang.org/grpc v1.33.2
+go: found google.golang.org/grpc/reflection in google.golang.org/grpc v1.33.2
+go: finding module for package github.com/RaminCH/lec5/server/proto/consigment
+go: google.golang.org/grpc upgrade => v1.33.2
+go: golang.org/x/text upgrade => v0.3.4
+go: google.golang.org/protobuf upgrade => v1.25.0
+go: github.com/golang/protobuf upgrade => v1.4.3
+go: google.golang.org/genproto upgrade => v0.0.0-20201119123407-9b1e624d6bc4
+go: golang.org/x/net upgrade => v0.0.0-20201110031124-69a78807bb2b
+go: golang.org/x/sys upgrade => v0.0.0-20201126233918-771906719818
+go: finding module for package github.com/RaminCH/lec5/server/proto/consigment
+go: finding module for package github.com/RaminCH/lec5/server/proto/consigment
+main.go:4:2: cannot find module providing package github.com/RaminCH/lec5/server/proto/consigment: module github.com/RaminCH/lec5/server/proto/consigment: git ls-remote -q origin in /home/ramin/go/pkg/mod/cache/vcs/c5f48646a661cadc022887a35832c2f0029565050eef2385e6c8ab15f4fd112c: exit status 128:
+        remote: Repository not found.
+        fatal: repository 'https://github.com/RaminCH/lec5/' not found	👎️ check that issue with lectorer!!!		!!!Almost solved
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec5/server (master)$
+
+
+
+👉️in main.go (server main)
+package main
+
+import (
+	"context"
+	"log"
+	"net"
+
+	pb "github.com/RaminCH/lec5/grpc_containers/server/proto/consigment"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
+)
+
+const (
+	port = ":50001"
+)
+
+//obyekt kotoriy budet xranit info o vnutrennix konfiguratsiyax
+type repository interface {
+	Create(*pb.Command) (*pb.Command, error)
+}
+
+//Repository... Nasha DB - localnaya - v dalneyshem realniye DB na Docker budut
+type Repository struct {
+	commands *[]pb.Command
+}
+
+//Create...		(etot metod budet delat Create dla 'type service struct' )
+func (r *Repository) Create(command *pb.Command) (*pb.Command, error) {
+	updatedCommands := append(*r.commands, command)
+	r.commands = updatedCommands //yesli prisvoit srazu bez 'updatedCommands' to budet infinite loop !
+	return command, nil
+}
+
+type service struct {
+	repo repository //u servisa budet yedinstvennoye pole -> gde xranatsa danniye
+}
+
+// repo - eto nekiy obj., udovl. interfeysu repository, kotoriy umeyet delat Create
+// takje obj. tipa 'service' doljen udovl interfeysu, kot nax. v consigment.proto -> service ShippingService { rpc CreateCommand(Command) ...
+// type service struct -> doljen umet Create i v cons..pb.go -> naxodim (unimplemented) CreateCommand... i kopiruyem suda(chutok izmeniv) --> see below
+
+func (s *service) CreateCommand(ctx context.Context, req *pb.Command) (*pb.Response, error) {
+	command, err := s.repo.Create(req)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("Request to create response: %v", command)
+	return &pb.Response{Created: true, Command: command}, nil //Response -> check consigment.proto and consigment.pb.go
+}
+
+func main() {
+	repo := &Repository{} //local storage
+
+	//nastroyka gRPC servera
+	listener, err := net.Listen("tcp", port)
+	if err != nil {
+		log.Fatalf("Failed to listen port: %v", err)
+	}
+
+	server := grpc.NewServer()
+
+	//Registriruyem nash servis dla servera
+	ourService := &service{repo}                         //repo v -> type service struct{...}
+	pb.RegisterShippingServiceServer(server, ourService) //sopostavlayem (s *grpc.Server-grpc) s (srv ShippingServiceServer-nash) see con..pb.go file
+
+	//chtobi vixodniye parametri servera soxranalis v go-runtime
+	reflection.Register(server) //reflektim, chtobi danniye ne provalivalis v 'run time'
+
+	log.Println("gRPC server runs on port: ", port)
+	if err := server.Serve(listener); err != nil {
+		log.Fatalf("failed to serve from port: %v", port)
+	}
+}
+
+
+☝️this main.go above is server -> should work after go run main.go (but have problems with go get -u) -> probably should work in RaminCH directory instead of RaminCH_self
+
+
+
+🙌️now copying 'proto' folder and paste into 'client' folder and creating in 'client' folder 'command.json' and 'main.go' 👇️
+
+👉️command.json👇️
+{
+    "description": "Hello world command", 
+    "weight": 222,
+    "containers": [
+        {"customer_id": "OOO Containers", "origin": "Moscow", "user_id": "OOO User"}
+    ], 
+    "vessel_id": "Na verkhu" 
+}
+
+
+👉️main.go👇️ (client side)
+
+	package main
+
+	import (
+		"context"
+		"encoding/json"
+		"io/ioutil"
+
+		"google.golang.org/genproto/googleapis/cloud/bigquery/connection/v1"
+		"google.golang.org/grpc"
+	)
+
+	pb "github.com/RaminCH/lec5/grpc_containers/client/proto/consigment"
+
+	const (
+		address = "localhost:50051"
+		defaultFilename = "command.json"	👈️1
+	)
+
+	func parseJSON(file string) (*pb.Command, error) {	👈️2
+		var command *pb.Command
+		fileBody, err := ioutil.ReadFile(file)
+		if err != nil {
+			return nil, err
+		}
+		json.Unmarshal(fileBody, &command)
+		return command, err
+	}
+
+	func main() {
+		connection, err := grpc.Dial(address, grpc.WithInsecure())
+		if err != nil {
+			log.Fatalf("connot connect to port: %v", err)
+		}
+		defer connection.Close()
+
+		client := pb.NewShippingServiceClient(connection)
+
+		command, err := parseJSON(defaultFilename)
+		if err != nil {
+			log.Fatalf("connot parse .json file: %v", err)
+		}
+
+		resp, err := client.CreateCommand(context.Background(), command) 
+		if err != nil {
+			log.Fatalf("connot get response: %v", err)
+		}
+
+		log.Printf("Created: %t", resp.Created)
+		log.Printf("Body: %v", resp.Command)
+	}
+
+
+
+
+👉️Now in server/consigment.proto adding GetAll logic/function
+👇️
+	syntax = "proto3";
+
+	package consigment;
+
+	message Container {
+	    string id = 1; 
+	    string customer_id = 2; 
+	    string origin = 3;  //destination
+	    string user_id = 4; //who transported
+	}
+
+	message Command {
+	    string id = 1;
+	    string description = 2;
+	    int32 weight = 3;   // container weight
+	    repeated Container containers = 4;
+	    string vessel = 5;  //delivering ship
+	}
+
+
+	message Response {
+	    bool created = 1;
+	    Command command = 2;
+	    repeated Command commands = 3;	👈️1
+	}
+
+	message GetRequest {} 👈️2
+
+	service ShippingService {
+	    rpc CreateCommand(Command) returns(Response) {}
+	    rpc  GetAllCommands (GetRequest) returns (Response) {}	👈️3
+	}
+
+!!!!!!!!!!!CTRL+S!!!!!!!!!!!!!!!!!!!!!!
+
+👉️ Now generating/updating proto file->
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec5/server (master)$ protoc -I. --go_out=plugins=grpc:. proto/consigment/consigment.proto
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec5/server (master)$ 
+
+
+👉️in pb file should appear:
+type Response struct {
+	Created  bool       `protobuf:"varint,1,opt,name=created" json:"created,omitempty"`
+	Command  *Command   `protobuf:"bytes,2,opt,name=command" json:"command,omitempty"`
+	Commands []*Command `protobuf:"bytes,3,rep,name=commands" json:"commands,omitempty"`		👈️THIS should appear!
+}
+
+
+
+👇️server/main.go
+
+	package main
+
+	import (
+		"context"
+		"log"
+		"net"
+
+		pb "github.com/RaminCH/test/server/proto/consigment"
+		"google.golang.org/grpc"
+		"google.golang.org/grpc/reflection"
+	)
+
+	const (
+		port = ":50001"
+	)
+
+	//obyekt kotoriy budet xranit info o vnutrennix konfiguratsiyax
+	type repository interface {
+		Create(*pb.Command) (*pb.Command, error)
+		GetAll() []*pb.Command	👈️1
+	}
+
+	//Repository... Nasha DB - localnaya - v dalneyshem realniye DB na Docker budut
+	type Repository struct {
+		commands []*pb.Command
+	}
+
+	//Create...		(etot metod budet delat Create dla 'type service struct' )
+	func (r *Repository) Create(command *pb.Command) (*pb.Command, error) {
+		updatedCommands := append(r.commands, command)
+		r.commands = updatedCommands //yesli prisvoit srazu bez 'updatedCommands' to budet infinite loop !
+		return command, nil
+	}
+
+	//GetAll...
+	func (r *Repository) GetAll() []*pb.Command {	👈️2
+		return r.commands
+	}
+
+	type service struct {
+		repo repository //u servisa budet yedinstvennoye pole -> gde xranatsa danniye
+	}
+
+	// repo - eto nekiy obj., udovl. interfeysu repository, kotoriy umeyet delat Create
+	// takje obj. tipa 'service' doljen udovl interfeysu, kot nax. v consigment.proto -> service ShippingService { rpc CreateCommand(Command) ...
+	// type service struct -> doljen umet Create i v cons..pb.go -> naxodim (unimplemented) CreateCommand... i kopiruyem suda(chutok izmeniv) --> see below
+
+	func (s *service) CreateCommand(ctx context.Context, req *pb.Command) (*pb.Response, error) {
+		command, err := s.repo.Create(req)
+		if err != nil {
+			return nil, err
+		}
+		log.Printf("Request to create response: %v", command)
+		return &pb.Response{Created: true, Command: command}, nil //Response -> check consigment.proto and consigment.pb.go
+	}
+
+	//GetAllCommands...
+	func (s *service) GetAllCommands(ctx context.Context, req *pb.GetRequest) (*pb.Response, error) {	👈️3
+		commands := s.repo.GetAll()
+		return &pb.Response{Commands: commands}, nil
+	}
+
+	func main() {
+		repo := &Repository{} //local storage
+
+		//nastroyka gRPC servera
+		listener, err := net.Listen("tcp", port)
+		if err != nil {
+			log.Fatalf("Failed to listen port: %v", err)
+		}
+
+		server := grpc.NewServer()
+
+		//Registriruyem nash servis dla servera
+		ourService := &service{repo}                         //repo v -> type service struct{...}
+		pb.RegisterShippingServiceServer(server, ourService) //sopostavlayem (s *grpc.Server-grpc) s (srv ShippingServiceServer-nash) see con..pb.go file
+
+		//chtobi vixodniye parametri servera soxranalis v go-runtime
+		reflection.Register(server) //reflektim, chtobi danniye ne provalivalis v 'run time'
+
+		log.Println("gRPC server runs on port: ", port)
+		if err := server.Serve(listener); err != nil {
+			log.Fatalf("failed to serve from port: %v", port)
+		}
+	}
+
+
+
+👈️Now copying proto folder here and changing in client folder's proto
+👇️and adding to client's main.go ->
+
+
+		package main
+
+		import (
+			"context"
+			"encoding/json"
+			"io/ioutil"
+			"log"
+
+			pb "github.com/RaminCH/test/client/proto/consigment"
+			"google.golang.org/grpc"
+		)
+
+		const (
+			address         = "localhost:50051"
+			defaultFilename = "command.json"
+		)
+
+		func parseJSON(file string) (*pb.Command, error) {
+			var command *pb.Command
+			fileBody, err := ioutil.ReadFile(file)
+			if err != nil {
+				return nil, err
+			}
+			json.Unmarshal(fileBody, &command)
+			return command, err
+		}
+
+		func main() {
+			connection, err := grpc.Dial(address, grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("connot connect to port: %v", err)
+			}
+			defer connection.Close()
+
+			client := pb.NewShippingServiceClient(connection)
+
+			command, err := parseJSON(defaultFilename)
+			if err != nil {
+				log.Fatalf("connot parse .json file: %v", err)
+			}
+
+			resp, err := client.CreateCommand(context.Background(), command)
+			if err != nil {
+				log.Fatalf("connot get response: %v", err)
+			}
+
+			log.Printf("Created: %t", resp.Created)
+			log.Printf("Body: %v", resp.Command)
+
+			getAll, err := client.GetAllCommands(context.Background(), &pb.GetRequest{})		👈️1
+			if err != nil {
+				log.Fatalf("connot get response: %v", err)
+			}
+
+			for _, v := range getAll.Commands {		👈️2
+				log.Println(v)
+			}
+		}
+
+
+🙌️now open 2 terminals and runs 1st: server's main.go -> go run main.go  and then client's main.go -> go run main.go	-> if works = complete 😎️
+
+
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec5/server (master)$ go run main.go 	👈️
+2020/12/01 01:28:37 gRPC server runs on port:  :50001
+
+
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec5/client (master)$ go run main.go	👈️
+2020/12/01 01:28:01 connot get response: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing dial tcp 127.0.0.1:50051: connect: connection refused"
+exit status 1
+
+
+!!!!!!!!!!!!!!!!!!!!!! YESLI PROBLEMI S pb file path v main.go -> pb "github.com/RaminCH_self/Go3_gRPC/lec6/client/proto/consigment"
+
+SMOTRIM V go.mod ('go mod init' then 'go get -u') -> po ney delayem path🙌️
+https://github.com/RaminCH/grpc_containers☝️
+
+
+***************************************************************************
+🐋️
+
+28.08.2020	(2 urovnevaya sborki DOCKER) -> yesli sobirat mnogourovneviy to vesit proyekt namnogo legche chem odin monolitniy docker 🐋️☝️
+
+Docker - eto visokourovneviy slepok operatsionki !!! 👈️
+Docker (na primere linux/ubuntu) zanimayet okolo 200mb togda kak virtualbox versiya budet 1.5 gb
+Vse konteyneri HOST-it operatsionnaya sistema (v moyem sluchaye linux kernel) -> ya mogu zapustit macintosh windows i tp.
+
+
+☝️Start : Sobirayem 1 uroven docker na Go runtime Alpinovskoy versii (go runtime: potomu chto on imeyet dostup ko vsem bibliotekam, a linux k primeru ne imeyet)
+a alpine: potomu chto on legkiy (naprimer FROM golang:latest -> dostatochno tajeliy)
+
+
+
+	FROM golang:alpine as builder 		#as builder -> eto alias dla udobstva👈️		☝️kak skazano vishe nachinayem s golang, on vidit vse dependencies
+
+	RUN apk update				# apk -> eto sudo v alpine
+	RUN apk upgrade
+	RUN apk add --no-cache git  		#no cache -> pozvolayet sdelat rasstanovku gita kak u nas v ubuntu dla alpine
+
+	#Sozdayu rabochuyu direktoriyu proyekta v konteynere
+	RUN mkdir /app 
+	#Perexodim v rabochuyu direktoriyu v konteynere
+	WORKDIR /app
+
+	#Kopiruyem vse iz direktorii 'server' v 'app'
+	COPY . .
+
+	#Yesli zabili sozdat go.mod i go.sum (go mod init) -> delayem sebe straxovku, yesli ix net opovestit -> yesli yest to vse ok
+	COPY go.mod .
+	COPY go.sum . 
+
+	#Pozvolayet poluchit vse zavisimosti iz go.mod
+	RUN go mod download				👈️zdes i yest fishka ekonomii, tak kak eta komanda pozvolayet vse stagivat po mere neobxodimosti a ne vse   
+							->kopiruyet iz nashey go/src so vsakim neoptimizirovannim musorom
+
+
+	#CGO ENABLED - pozvolayet ispolzovat/ne ispolzovat komplilator CGO
+	#dla sborki nozkourovnevix bibliotek yazika Go napisannix na C
+
+	#CGO_ENABLED=0 oznachayet chto mi perekompiliruyem vse paketi pod okrujeniye yazika Go
+	#GOOS - pod kakoye okrujeniye ispolzuyem kompilator yazika Go 
+	#go build -a -installsuffix cgo -> sobrat proyek s uchetom obxoda CGO
+	# -o -> kak nazvat vixodnoy biinarnik (v nashem sluchaye 'server')
+	RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server 
+
+	#na etom etape mi imeyem GORU NENUJNOGO MUSORA v goroutine + server.bin
+
+
+
+
+	# 2-ya stupen sborki 
+	# Podgotavlivayem rabochiy konteyner
+	# v kotorom budet minimum funktsionala, neobxodimogo dla vipolneniya .bin (ex: server.bin)
+	FROM alpine:latest 										👈️teper berem slepok operatsionki (spuskayemsa nije)
+
+	RUN apk --no-cache add ca-certificates 				👈️eta komanda pozvolit zabrat v etot etap nastroyki iz 1-go etapa(posle peredachi sertifikatov iz 1-go
+									etapa mi budem zdes znat o binarnike (server.bin)
+
+	#nastraivayem rabocheye mesto v novom konteynere
+	RUN mkdir /app
+	#perexodim v rabocheye mesto 
+	WORKDIR /app
+
+	#Xotim perebrosit iz konteynera builder(alias 1-go konteynera)
+	#Kopiruyem iz builder-a nash server.bin
+	COPY  --from=builder /app/server .
+
+	#Zapuskayem binarnik 
+	CMD ["./server"]
+
+
+👉️*********---> daleye v terminale: 🐋️Zapuskayem Docker iz papki 'server':
+
+
+👉️ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec6/server$ go run main.go
+2020/12/01 16:32:33 gRPC server runs on port:  :50001					👈️Ubedimsa chto server rabotayet, chtob ne bilo errors
+^Csignal: interrupt
+
+								     👇️
+👉️🐋️ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec6/server (master)$ sudo docker build -t grpc_serv .	(-t grpc_serv-nazivayem konteyner) . -> 
+Sending build context to Docker daemon  32.26kB									     (tochka '.' -> ozn. vzat Dockerfile gde mi nax.->on lekit)	
+Step 1/17 : FROM golang:alpine as builder
+ ---> 1de1afaeaa9a
+Step 2/17 : RUN apk update
+ ---> Using cache
+ ---> 5d50d16af7ab
+Step 3/17 : RUN apk upgrade
+ ---> Using cache
+ ---> a4bf44a3b07f
+...
+...
+...
+Step 16/17 : COPY  --from=builder /app/server .
+ ---> 39f7a8c29a45
+Step 17/17 : CMD ["./server"]
+ ---> Running in eba9600259b7
+Removing intermediate container eba9600259b7
+ ---> 3e91ef0e277c
+Successfully built 3e91ef0e277c							🙌️😎️Success!!!!!!!!!!!!!!!!! building of 2 step Dockerfile completed
+Successfully tagged grpc_serv:latest
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec6/server (master)$ 
+
+
+👉️ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec6/server (master)$ sudo docker images 	🐋️checking images || and DELETING ALL Nones (garbage)
+[sudo] password for ramin: 
+REPOSITORY            TAG                 IMAGE ID            CREATED             SIZE
+grpc_serv             latest              3e91ef0e277c        6 hours ago         18.1MB	👈️🐋️sobrali binarnik iz Go na Alpine v Dockerfile(vsego 18 mb vmesto mnogix gb)
+<none>                <none>              92547cc67a35        6 hours ago         597MB		👈️🐋️musor iz go alpine(etot i yesli yeshe budet <none>-i mojno udalit
+raminch/first_image   latest              56173ac34cd9        5 days ago          845MB
+tester                latest              56173ac34cd9        5 days ago          845MB
+golang                latest              6d8772fbd285        12 days ago         839MB
+golang                alpine              1de1afaeaa9a        2 weeks ago         299MB
+alpine                latest              d6e46aa2470d        5 weeks ago         5.57MB
+hello-world           latest              bf756fb1ae65        11 months ago       13.3kB
+
+
+🐋️removing <none> images (with garbage)
+
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec6/server (master)$ sudo docker image rm -f 92547cc67a35	🐋️-f (force) deletes all dependecies
+Deleted: sha256:92547cc67a354916ee376dd2cd999b14005e333a3fc9dc7eaafd371d8cae10e4
+Deleted: sha256:38d99d133abcd6f469d5cdb10f4ff41a63b080171f35dfeb16d80054417e9d77
+Deleted: sha256:6022055018a776f2c27a599d5a62c3e6529f256aac238d78cd1ae6b3b23dca8a
+Deleted: sha256:e0c7f26bf5f3d42e6528b41c913b0707da1cbfe58d9e8d002fff4a78ea7eca30
+Deleted: sha256:adaf22928fe8d16d9776fa1d38462e4956e3b664348e89277e6ff1414ddc951e
+Deleted: sha256:c0cbfb498a56e3fdc073d3a767518327fa95123a3312379096ed067264cfd4ba
+Deleted: sha256:9422461cf9e13f885e981e584221da4a87fc4354807dba58f70f7a551bace2e4
+Deleted: sha256:351dd005206124fa98cba8a105626dbdf9a54f01470c35a3a0643e0e3fcb4435
+Deleted: sha256:dd5779db07c6b874662325daa06595cdb6535639787d65ee0ac1a0bbb4aa285a
+Deleted: sha256:03f6a0e7021e3443dbe58339af6643214eada50bd49d0d569815cce0c0addb66
+Deleted: sha256:7a2f180f45d8dbf4c3f9909b1d4541aef740a8703d9991e5c3f0383c42a93d5b
+Deleted: sha256:c65fe1270dd76dd9063b87ab0023d8780e914840448fb9c438b170d99c4ac0fd
+Deleted: sha256:2ca9498da022a20e05ce9b9f5c175ea053a8cb4ebb82d497fcdfc64348b55fd0
+Deleted: sha256:8c03e7af01af8ccbfffd300b75d55e23a899738dd6d5a5d22af635bcc8f86013
+Deleted: sha256:e274a9948b00662cf2d974c718a00ef0784426db8b0689b9855eeedac3ca2eca
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec6/server (master)$ sudo docker images 	🐋️checking
+REPOSITORY            TAG                 IMAGE ID            CREATED             SIZE
+grpc_serv             latest              3e91ef0e277c        6 hours ago         18.1MB
+<none>                <none>              a4bf44a3b07f        6 hours ago         301MB		🐋️another <none> left
+tester                latest              56173ac34cd9        6 days ago          845MB
+raminch/first_image   latest              56173ac34cd9        6 days ago          845MB
+golang                latest              6d8772fbd285        12 days ago         839MB
+golang                alpine              1de1afaeaa9a        2 weeks ago         299MB
+alpine                latest              d6e46aa2470d        5 weeks ago         5.57MB
+hello-world           latest              bf756fb1ae65        11 months ago       13.3kB
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec6/server (master)$ sudo docker image rm -f a4bf44a3b07f	🐋️deleting second <none> image
+Deleted: sha256:a4bf44a3b07f081e368ffd142dcc9e55b2dd7cc40976d749e046500faee93724
+Deleted: sha256:5d50d16af7ab613e2244d494efdf879487b83e4eff650f18ec2a7ed4a302a8cb
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec6/server (master)$ sudo docker images 	🐋️all <none>s are deleted
+REPOSITORY            TAG                 IMAGE ID            CREATED             SIZE
+grpc_serv             latest              3e91ef0e277c        6 hours ago         18.1MB
+tester                latest              56173ac34cd9        6 days ago          845MB
+raminch/first_image   latest              56173ac34cd9        6 days ago          845MB
+golang                latest              6d8772fbd285        12 days ago         839MB	☝️sam Go ochen tajeliy (no imeyet vixod na vse biblioteki)   |poetomu delali 2 shagovuyu
+golang                alpine              1de1afaeaa9a        2 weeks ago         299MB	☝️na alpine Go legkiy , no ne imeyet vixod na vse svoi fishki|sborku Dockerfile🐋️
+alpine                latest              d6e46aa2470d        5 weeks ago         5.57MB						
+hello-world           latest              bf756fb1ae65        11 months ago       13.3kB
+
+
+													👇️
+---->🐋️running container:								      localhost	- container
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec6/server (master)$ sudo docker run -p 50051:50051 grpc_serv👈️
+2020/12/01 19:53:19 gRPC server runs on port:  :50001										☝️runned server on Docker and we can now
+																run client and interconnect hard coded client
+																with virtualized server😎️
+															    ☝️without Docker -> server is also just hard code
+
+
+
+👉️After all 'none's are deleted and we complete 'server'->
+
+
+
+👇️going to create 'client' 
+
+
+******************************************🐋️Building 'Dockerfile' fr Client 
+
+# 1-ya stupen sborki 
+#sborka na osnove goroutine
+FROM golang:alpine as builder 
+
+#Obnovlayu konfigi -> slepku OS v konteynere
+#i zagrujayu 'git' dla podderjki 'go.mod'
+RUN apk update
+RUN apk upgrade
+RUN apk add --no-cache git 
+
+#Sozdayu rabochuyu direktoriyu proyekta v konteynere
+RUN mkdir /app 
+#Perexodim v rabochuyu direktoriyu v konteynere
+WORKDIR /app
+
+#Kopiruyem vse iz direktorii 'server' v 'app'
+COPY . .
+
+#Yesli zabili sozdat go.mod i go.sum (go mod init) -> delayem sebe straxovku, yesli ix net opovestit -> yesli yest to vse ok
+COPY go.mod .
+COPY go.sum . 
+
+#Pozvolayet poluchit vse zavisimosti iz go.mod
+RUN go mod download
+
+
+#CGO ENABLED - pozvolayet ispolzovat/ne ispolzovat komplilator CGO
+#dla sborki nozkourovnevix bibliotek yazika Go napisannix na C
+
+#CGO_ENABLED=0 oznachayet chto mi perekompiliruyem vse paketi pod okrujeniye yazika Go
+#GOOS - pod kakoye okrujeniye ispolzuyem kompilator yazika Go 
+#go build -a -installsuffix cgo -> sobrat proyek s uchetom obxoda CGO
+# -o -> kak nazvat vixodnoy biinarnik (v nashem sluchaye 'server')
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o client 
+
+#na etom etape mi imeyem GORU NENUJNOGO MUSORA v goroutine + server.bin
+
+
+# 2-ya stupen sborki 
+# Podgotavlivayem rabochiy konteyner
+# v kotorom budet minimum funktsionala, neobxodimogo dla vipolneniya .bin (ex: server.bin)
+FROM alpine:latest 
+
+RUN apk --no-cache add ca-certificates 
+
+#nastraivayem rabocheye mesto v novom konteynere
+RUN mkdir /app
+#perexodim v rabocheye mesto 
+WORKDIR /app
+
+#Xotim perebrosit iz konteynera builder(alias 1-go konteynera)
+#Kopiruyem iz builder-a nash server.bin
+#dobavlayem json file
+ADD command.json /app/command.json
+COPY  --from=builder /app/client .
+
+#Zapuskayem binarnik 
+CMD ["./client"]
+
+*********************************
+
+JSON file: 'command json' 👈️
+
+{
+    "description": "Hello world command", 
+    "weight": 222,
+    "containers": [
+        {"customer_id": "OOO Containers", "origin": "Moscow", "user_id": "OOO User"}
+    ], 
+    "vessel_id": "Na verkhu" 
+}
+*********************************
+
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec6/client (master)$ dir 👈️
+command.json  Dockerfile  go.mod  go.sum  main.go  proto
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec6/client (master)$ sudo docker build -t grpc_cli .  	👈️🐋️bilding image for client
+Sending build context to Docker daemon  31.74kB
+Step 1/18 : FROM golang:alpine as builder
+ ---> 1de1afaeaa9a
+Step 2/18 : RUN apk update
+ ---> Running in 679b8640b628
+fetch http://dl-cdn.alpinelinux.org/alpine/v3.12/main/x86_64/APKINDEX.tar.gz
+fetch http://dl-cdn.alpinelinux.org/alpine/v3.12/community/x86_64/APKINDEX.tar.gz
+v3.12.1-74-g54165f73d3 [http://dl-cdn.alpinelinux.org/alpine/v3.12/main]
+...
+...
+...
+---> c0c79c8b8e60
+Successfully built c0c79c8b8e60
+Successfully tagged grpc_cli:latest						😎️SUCCESSFULLY created image for client
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec6/client (master)$ 
+
+
+
+************************running server on docker🐋️
+
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec6 (master)$ cd server/
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec6/server (master)$ sudo docker run -p 50051:50051 grpc_serv
+[sudo] password for ramin: 
+2020/12/05 17:01:43 gRPC server runs on port:  :50001 👈️
+
+
+***********************running client on docker🐋️
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec6/client (master)$ sudo docker run -p 50051:50051 grpc_cli	
+docker: Error response from daemon: driver failed programming external connectivity on endpoint sleepy_chebyshev (7d3ff3df220ad07b713c6fbf8c1b5eee5ff40daccc07084dc5f2c6e02de3d666): Bind for 0.0.0.0:50051 failed: port is already allocated.
+ERRO[0000] error waiting for container: context canceled 									⛔️having problem, cz 50051 is busy with server
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec6/client (master)$ 
+
+
+
+										🙌️👇️
+
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>HERE MICRO HELPS US (micro lets several container link to the same port on background)👈️😎️<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+it should be installed in the name(working folder) like github.com/RaminCH   or github.com/RaminCH_self
+
+
+>>>👉️
+ramin@raminhost:~/go/src/github.com/RaminCH_self$ GO111MODULE=on  go get github.com/micro/micro/v2			<for RaminCH_self
+go: github.com/micro/micro/v2 upgrade => v2.9.3	👈️
+ramin@raminhost:~/go/src/github.com/RaminCH_self$ 
+
+>>>👉️
+ramin@raminhost:~/go/src/github.com/RaminCH$ GO111MODULE=on  go get github.com/micro/micro/v2				<for RaminCH
+go: github.com/micro/micro/v2 upgrade => v2.9.3	👈️
+ramin@raminhost:~/go/src/github.com/RaminCH$ 
+
+
+👉️Now installing gen-micro to let protobuf files see each other
+ramin@raminhost:~/go/src/github.com/RaminCH_self$ GO111MODULE=on  go get github.com/micro/micro/v2/cmd/protoc-gen-micro	👈️
+go: found github.com/micro/micro/v2/cmd/protoc-gen-micro in github.com/micro/micro/v2 v2.9.3	👈️installed 😎️
+ramin@raminhost:~/go/src/github.com/RaminCH_self$ 
+
+➡️Same in RaminCH folder
+ramin@raminhost:~/go/src/github.com/RaminCH$ GO111MODULE=on  go get github.com/micro/micro/v2/cmd/protoc-gen-micro
+go: found github.com/micro/micro/v2/cmd/protoc-gen-micro in github.com/micro/micro/v2 v2.9.3
+ramin@raminhost:~/go/src/github.com/RaminCH$
+
+
+************************************************************************************
+
+
+
+lec7 28.08.2020
+copied everythong from lec6 to lec7
+in client -> deleting consigment.pb.proto -> then creating protofile according to MICRO logic:
+
+
+👉️if : 
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec7/client$ protoc --proto_path=. --go_out=. --micro_out=. proto/consigment/consigment.proto	⛔️doesn't work
+protoc-gen-micro: program not found or is not executable
+--micro_out: protoc-gen-micro: Plugin failed with status code 1.	👎️
+
+👉️then :
+Run vim ~/.bash_profile			👈️this helped!!!!!!!!!!!!!!😎️👇️		gen-micro solution
+Add:
+export GO_PATH=~/go
+export PATH=$PATH:/$GO_PATH/bin
+Run source ~/.bash_profile
+
+
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec7/client$ protoc --proto_path=. --go_out=. --micro_out=. proto/consigment/consigment.proto
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec7/client$😎️
+
+➡️now in proto/consigment folder we have:
+consigment.proto
+consigment.pb.go
+consigment.pb.micro.go		😎️!!!
+
+***************************************************************************************
+
+
+day4 31.08.2020 (building 3rd microservice)
+
+👉️creating folder lec8
+inside lec8 creating 2 folders -> 'server' and 'client'
+copy proto folder from lec7 to each 'server' and 'client in lec8
+
+run vscode and in 'server' create Dockerfile and Makefile (GNU make)
+
+
+➡️MAKEFILE:	-> to automate frequently needed commands☝️☝️☝️
+
+	👉️	.PHONY:proto
+		proto:
+			protoc -I. --go_out=plugins=grpc:. proto/consigment/consigment.proto
+
+	👉️in terminal:
+	ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/server$ make proto	👈️run makefile in terminal
+	protoc -I. --go_out=plugins=grpc:. proto/consigment/consigment.proto			👈️mean 'consigment.pb.go' created
+	ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/server$ 
+
+***********
+	in makefile👉️.DEFAULT_GOAL := proto 
+
+	ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/server$ make	👈️will let run above command without 'make proto' but only 'make'	
+	protoc -I. --go_out=plugins=grpc:. proto/consigment/consigment.proto
+	ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/server$ 
+
+************
+
+Now whole picture of Makefile:👈️
+
+					.PHONY:proto									👈️creating grpc file: consigment.proto
+					proto:
+						protoc -I. --go_out=plugins=grpc:. proto/consigment/consigment.proto
+
+					.PHONY:buld									🐋️bilding image
+					build:		
+						sudo docker build -t server .
+
+					.PHONY:run									🐋️running container
+					run:
+						sudo docker run -p 50051:50051 server
+
+					.DEFAULT_GOAL := proto 								👈️shortening grpc file command from make proto to make
+
+
+👇️
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/server$ make		👈️make and make proto are same just shortened via .DEFAULT_GOAL!!!
+protoc -I. --go_out=plugins=grpc:. proto/consigment/consigment.proto
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/server$ make proto
+protoc -I. --go_out=plugins=grpc:. proto/consigment/consigment.proto
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/server$ make build	🐋️building image (error cz didn't fill logic of Dockerfile yet)
+sudo docker build -t server .
+[sudo] password for ramin: 
+Sending build context to Docker daemon  20.48kB
+Error response from daemon: the Dockerfile (Dockerfile) cannot be empty
+Makefile:7: recipe for target 'build' failed
+make: *** [build] Error 1
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/server$ make run 	🐋️runnig container (error cz no image created)
+sudo docker run -p 50051:50051 server
+Unable to find image 'server:latest' locally
+docker: Error response from daemon: pull access denied for server, repository does not exist or may require 'docker login': denied: requested access to the resource is denied.
+See 'docker run --help'.
+Makefile:11: recipe for target 'run' failed
+make: *** [run] Error 125
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/server$
+
+
+
+👉️Now copying Dockerfile and main.go (of server folder) from lec6 or lec7 to ---> lec8 (server folder)
+
+cd to 'server' and: Do 'go mod init' and 'go get -u'☝️
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/server$ go mod init 👈️1!	
+go: creating new go.mod: module github.com/RaminCH_self/Go3_gRPC/lec8/server
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/server$ go get -u 👈️2!
+go: finding module for package google.golang.org/grpc
+go: finding module for package google.golang.org/grpc/reflection
+go: finding module for package github.com/micro/go-micro/v2/api
+go: finding module for package golang.org/x/net/context
+go: finding module for package github.com/micro/go-micro/v2/server
+go: finding module for package github.com/golang/protobuf/proto
+go: finding module for package github.com/micro/go-micro/v2/client
+go: found google.golang.org/grpc in google.golang.org/grpc v1.34.0
+go: found google.golang.org/grpc/reflection in google.golang.org/grpc v1.34.0
+go: found github.com/golang/protobuf/proto in github.com/golang/protobuf v1.4.3
+go: found github.com/micro/go-micro/v2/api in github.com/micro/go-micro/v2 v2.9.1
+go: found github.com/micro/go-micro/v2/client in github.com/micro/go-micro/v2 v2.9.1
+go: found github.com/micro/go-micro/v2/server in github.com/micro/go-micro/v2 v2.9.1
+go: found golang.org/x/net/context in golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb
+go: google.golang.org/grpc upgrade => v1.34.0
+go: github.com/golang/protobuf upgrade => v1.4.3
+go: golang.org/x/net upgrade => v0.0.0-20201202161906-c7110b5ffcbb
+go: golang.org/x/text upgrade => v0.3.4
+go: google.golang.org/genproto upgrade => v0.0.0-20201204160425-06b3db808446
+go: github.com/pkg/errors upgrade => v0.9.1
+go: golang.org/x/crypto upgrade => v0.0.0-20201203163018-be400aefbc4c
+go: golang.org/x/sys upgrade => v0.0.0-20201204225414-ed752295db88
+go: github.com/google/uuid upgrade => v1.1.2
+go: google.golang.org/protobuf upgrade => v1.25.0
+go: github.com/miekg/dns upgrade => v1.1.35
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/server$	
+
+👉️Proverayem sozdayetsa li iz servera 'BINARNIK'
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/server$ go build	👈️sozdayem binarnik -> 'server' -> doljen poyavitsa v vs code
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/server$ ./server 👈️zapuskayem
+2020/12/07 10:32:24 gRPC server runs on port:  :50001				👈️rabotayet
+^C
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/server$
+
+👉️daleye:
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/server$ make	👈️pereopredelayem nash pb file
+protoc -I. --go_out=plugins=grpc:. proto/consigment/consigment.proto
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/server$ go build 👈️snova proverayem vse li ok s sozdaniyem binarnika -> yesli nichego ne poyavl. to ok
+
+👉️sozdayem image i daleye delayem run server v docker cherez makefile:
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/server$ make build👈️creating image
+sudo docker build -t server .
+[sudo] password for ramin: 
+Sending build context to Docker daemon  18.63MB
+Step 1/17 : FROM golang:alpine as builder
+ ---> 1de1afaeaa9a
+Step 2/17 : RUN apk update
+ ---> Using cache
+ ---> a48398213fe3
+Step 3/17 : RUN apk upgrade
+...
+...
+...
+ ---> Using cache
+ ---> b3917922100c
+Step 16/17 : COPY  --from=builder /app/server .
+ ---> fb4a29c066f0
+Step 17/17 : CMD ["./server"]
+ ---> Running in 59f025ca064b
+Removing intermediate container 59f025ca064b
+ ---> 4a3848120723
+Successfully built 4a3848120723
+Successfully tagged server:latest
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/server$ make run 👈️running container😎️works 
+sudo docker run -p 50051:50051 server
+2020/12/07 08:17:29 gRPC server runs on port:  :50001
+^CMakefile:11: recipe for target 'run' failed					👈️ctrl+c -> stopping 'docker run'
+make: *** [run] Error 2
+
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/server$ 
+
+
+
+
+
+
+
+👉️NOW working in 'client' folder ->
+bringing to here Dockerfile and Makefile from server or previous lectures -> don't foget to change server to client in codes!!!
+
+👉️Makefile:
+		.PHONY:proto
+		proto:
+			protoc -I. --go_out=plugins=grpc:. proto/consigment/consigment.proto
+
+		.PHONY:buld
+		build:
+			sudo docker build -t client .
+
+		.PHONY:run
+		run:
+			sudo docker run -p 50052:50051 client		👈️for experiment making localhost 50052 (should not see each other cz server's local host is 50051
+
+		.DEFAULT_GOAL := proto 
+
+🐋️👉️Changing server in Dockerfile to client (didn't paste code here cz too big -> ceck lec8/client/Dockerfile)
+
+👉️perekidivayem Gotoviy 'main.go' iz predidushix papok -> menayem 'pb path' na 'lec8' 
+
+
+👉️
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/client$ go mod init	👈️setting up packages
+go: creating new go.mod: module github.com/RaminCH_self/Go3_gRPC/lec8/client
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/client$ go get -u	👈️updating packages
+go: finding module for package google.golang.org/grpc
+go: finding module for package github.com/micro/go-micro/v2/client
+...
+go: golang.org/x/sys upgrade => v0.0.0-20201204225414-ed752295db88
+go: github.com/pkg/errors upgrade => v0.9.1
+go: golang.org/x/text upgrade => v0.3.4
+go: github.com/miekg/dns upgrade => v1.1.35
+go: google.golang.org/protobuf upgrade => v1.25.0
+# github.com/RaminCH_self/Go3_gRPC/lec8/client
+./main.go:35:12: undefined: consigment.NewShippingServiceClient				👈️⛔️Error cz we didn't create pb file
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/client$ make proto	👈️Making proto
+protoc -I. --go_out=plugins=grpc:. proto/consigment/consigment.proto
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/client$ go get -u	👈️updating again
+go: github.com/golang/protobuf upgrade => v1.4.3
+go: google.golang.org/grpc upgrade => v1.34.0
+go: google.golang.org/genproto upgrade => v0.0.0-20201204160425-06b3db808446
+...
+go: github.com/pkg/errors upgrade => v0.9.1
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/client$ 			😎️Success!
+
+☝️opening 2 terminals : in server and in client folders -> ./client and ./server -> should see each other
+🙌️also 'make run' in server terminal and ./client in client -> should also work
+if make build -> and then make run in client -> then it will not see server cz runs on 50052 and if we ll change to 50051 it will say that it is busy(by server)
+💪️here comes micro -> multicast dns💪️ below also written after main.go 👇️
+
+👉️sozdayem 'command.json' 
+{
+    "description": "Hello world command", 
+    "weight": 222,
+    "containers": [
+        {"customer_id": "OOO Containers", "origin": "Moscow", "user_id": "OOO User"}
+    ], 
+    "vessel_id": "Na verkhu" 
+}
+
+
+
+👉️main.go
+
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"io/ioutil"
+	"log"
+
+	pb "github.com/RaminCH_self/Go3_gRPC/lec8/client/proto/consigment"
+	"google.golang.org/grpc"
+)
+
+const (
+	address         = "localhost:50051"
+	defaultFilename = "command.json"
+)
+
+func parseJSON(file string) (*pb.Command, error) {
+	var command *pb.Command
+	fileBody, err := ioutil.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+	json.Unmarshal(fileBody, &command)
+	return command, err
+}
+
+func main() {
+	connection, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("connot connect to port: %v", err)
+	}
+	defer connection.Close()
+
+	client := pb.NewShippingServiceClient(connection)
+
+	command, err := parseJSON(defaultFilename)
+	if err != nil {
+		log.Fatalf("connot parse .json file: %v", err)
+	}
+
+	resp, err := client.CreateCommand(context.Background(), command)
+	if err != nil {
+		log.Fatalf("connot get response: %v", err)
+	}
+
+	log.Printf("Created: %t", resp.Created)
+	log.Printf("Body: %v", resp.Command)
+
+	getAll, err := client.GetAllCommands(context.Background(), &pb.GetRequest{})
+	if err != nil {
+		log.Fatalf("connot get response: %v", err)
+	}
+
+	for _, v := range getAll.Commands {
+		log.Println(v)
+	}
+}
+
+
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/client$ make proto
+protoc -I. --go_out=plugins=grpc:. proto/consigment/consigment.proto
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/client$ go mod init
+go mod init: go.mod already exists
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/client$ go get -u
+go: google.golang.org/protobuf upgrade => v1.25.0
+go: github.com/golang/protobuf upgrade => v1.4.3
+go: google.golang.org/grpc upgrade => v1.34.0
+go: google.golang.org/genproto upgrade => v0.0.0-20201214200347-8c77b98c765d
+go: golang.org/x/net upgrade => v0.0.0-20201216054612-986b41b23924
+go: golang.org/x/sys upgrade => v0.0.0-20201218084310-7d0127a74742
+go: golang.org/x/text upgrade => v0.3.4
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/client$ go build
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/client$ ./client
+2020/12/18 20:58:14 can not get response: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing dial tcp 127.0.0.1:50051: connect: connection refused"
+
+
+✋️otkrivayem 2 terminala:
+
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8$ cd client/		👈️perexodim v klient -> daleye 'go build'-> sozdayem binarnik kliyenta 
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/client$ ./client 	👈️!zapuskayem binarnik -> u prepoda rabotayet u mena net👇️⛔️
+2020/12/18 20:37:55 connot get response: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing dial tcp 127.0.0.1:50051: connect: connection refused"
+
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8$ cd server/
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/server$ ./server 	👈️!parallelno s kliyebtom zapuskayem binarnik -> 'server'a
+2020/12/18 20:37:51 gRPC server runs on port:  :50001
+
+
+
+*******************************************EVANS- gRPC CLIENT*********************************  
+👉️zagrujayem 
+Evans -> grpc client(tipa postman fdla grpc) mojno vizivat v terminale funksii Create, GetAll i t.p 
+(mojno  zapolnat danniye iz terminala->sozd tela zaprosa, ex: call GetAllCommands)
+Installation:
+
+	1)	go get github.com/ktr0731/evans
+
+	2)      %> wget https://github.com/ktr0731/evans/releases/download/0.8.3/evans_linux_amd64.tar.gz
+		[..snip..]
+		%> tar xvf evans_linux_amd64.tar.gz 
+		LICENSE
+		README.md
+		evans
+		%> mv evans ~/bin/ 
+		%> file ~/bin/evans 
+		/home/artanicus/bin/evans: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), statically linked, not stripped
+		%> evans -r
+
+
+	EVANS COMMAND➡️ evans -r repl -p 50051👈️
+	yesli zaydet: v terminale commady (dla etogo proyekta):
+	call
+	call GetAllCommands
+	call CreateCommand (i daleye zapolnayem znacheniya) -> sozdast JSON i peredast na server (sozdayem clienta vruchnuyu)
+
+we integrated evans run command into Makefile:
+
+			*****************************
+			.PHONY:cli 
+			cli:
+				evans -r repl -p 50051
+
+
+			.PHONY:proto
+			proto:
+				protoc -I. --go_out=plugins=grpc:. proto/consigment/consigment.proto
+
+			...
+			...
+			...etc.
+
+			*****************************
+
+			in terminal: make cli ----> should start EVANS🙌️
+			to exit just type: exit 
+
+
+
+
+
+👇️
+🐋️Deleting unsused images in Docker (just to free up my space on laptop)
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/client$ sudo docker images
+REPOSITORY            TAG                 IMAGE ID            CREATED             SIZE
+<none>                <none>              1b3181dee743        6 days ago          1.77GB
+server                latest              4a3848120723        11 days ago         24.5MB
+<none>                <none>              68fbb001af8c        11 days ago         1.76GB
+grpc_cli              latest              c0c79c8b8e60        13 days ago         17.5MB
+<none>                <none>              2e194559be5d        13 days ago         594MB
+grpc_serv             latest              3e91ef0e277c        2 weeks ago         18.1MB
+tester                latest              56173ac34cd9        3 weeks ago         845MB
+raminch/first_image   latest              56173ac34cd9        3 weeks ago         845MB
+golang                latest              6d8772fbd285        4 weeks ago         839MB
+golang                alpine              1de1afaeaa9a        5 weeks ago         299MB
+alpine                latest              d6e46aa2470d        8 weeks ago         5.57MB
+hello-world           latest              bf756fb1ae65        11 months ago       13.3kB
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/client$ sudo docker image rm -f 1b3181dee743
+Deleted: sha256:1b3181dee7433b4779b67d9e309c4901fc32e9ca5f4d0158122e8025ddb4721c
+Deleted: sha256:9793e4ed3524fc583d7ed3b2e2db6aa5f4ef66407e35f86cf2b60aac7d324477
+Deleted: sha256:a2dd34a93ee431bbe94079118f65c620b7353fce2bcf44a112c395e4935ad109
+Deleted: sha256:6307268bd910fa861d0e31d0cc6da949d294484712ed11103a8a21e4c7c2deb8
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/client$ 😎️
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/client$ sudo docker images
+REPOSITORY            TAG                 IMAGE ID            CREATED             SIZE
+server                latest              4a3848120723        11 days ago         24.5MB
+<none>                <none>              68fbb001af8c        11 days ago         1.76GB
+grpc_cli              latest              c0c79c8b8e60        13 days ago         17.5MB
+<none>                <none>              2e194559be5d        13 days ago         594MB
+grpc_serv             latest              3e91ef0e277c        2 weeks ago         18.1MB
+tester                latest              56173ac34cd9        3 weeks ago         845MB
+raminch/first_image   latest              56173ac34cd9        3 weeks ago         845MB
+golang                latest              6d8772fbd285        4 weeks ago         839MB
+golang                alpine              1de1afaeaa9a        5 weeks ago         299MB
+alpine                latest              d6e46aa2470d        8 weeks ago         5.57MB
+hello-world           latest              bf756fb1ae65        11 months ago       13.3kB
+
+
+
+👉️interesting command!
+ramin@raminhost:~/go/src/github.com/RaminCH_self/Go3_gRPC/lec8/client$ sudo netstat -lnp	👈️will show all conections
+Active Internet connections (only servers)
+
+
+
+///////////////
+creating folder lec9 -> creating 'server' and 'client' folders
+
+
+in server 
+copying here proto and Makefile from lec8 (proto should have only consignment.proto, delete anothers)
+👉️in Makefile
+--proto_path=.  -> otkuda berem proto file (. -> otsuda)
+--go_out=. 	-> mi govorim kuda pomeshat vixodnak, -> kladi v to mesto gde naydesh yego 
+--micro_out=.	-> tuda je pomestim vixodnoy kod micro
+proto/consignment/consignment.proto -> otkuda eto vse brat
+
+
+
+⛔️---------------------------------------------------------------------------------
+ramin@raminhost:~/go/src$ go get github.com/micro/protoc-gen-micro/v2
+cannot find package "github.com/micro/protoc-gen-micro/v2" in any of:
+	/usr/local/go/src/github.com/micro/protoc-gen-micro/v2 (from $GOROOT)
+	/home/ramin/go/src/github.com/micro/protoc-gen-micro/v2 (from $GOPATH)
+ramin@raminhost:~/go/src$ export GO111MODULE=on						⛔️enable go111 in order to run
+ramin@raminhost:~/go/src$ go get github.com/micro/protoc-gen-micro/v2
+go: github.com/micro/protoc-gen-micro/v2 upgrade => v2.1.1
+ramin@raminhost:~/go/src$ 
+
+after update -> same:
+ramin@raminhost:~/go/src$ which protoc-gen-micro
+ramin@raminhost:~/go/src$ go get github.com/micro/protoc-gen-micro/v2
+go: github.com/micro/protoc-gen-micro/v2 upgrade => v2.1.1
+ramin@raminhost:~/go/src$ 
+------------------------------------------------------------------------------------
+
+
+👉️writing in Makefile:
+.PHONY:proto
+proto:
+	protoc --proto_path=. --go_out=. --micro_out=. proto/consignment/consignment.proto
+
+👉️in terminal: make 👉️should create 'consignment.pb.go' and 'consignment.pb.micro.go' files
+
+
+👉️copying main.go file from 5th folder to 9th folder and changing:
+pb "github.com/RaminCH_self/Go3_gRPC/lec9/server/proto/consigment" 
+					^from 5 ->to 9
+
+👉️now: go mod init	peregenerirovat 
+        go get -u
+
+
+
+👉️in main.go: commenting 'const port' part in the beginnnig of code, cz we will not use hardly coded port 50051 anymore due to micro cast DNS
+// const (
+// 	port = ":50001"
+// )
+
+👉️main.go code:
+func main() {
+	repo := &Repository{} //local storage
+
+	srvService := micro.NewService(
+		micro.Name("server"),
+	)
+	srvService.Init()
+
+	ourService := &service{repo}
+	if err := pb.RegisterShippingServiceHAndler(srvService.Server(), ourService); err != nil {
+		log.Panic(err)
+	}
+
+	if err := srvService.Run(); err != nil {
+		log.Panic(err)
+	}
+
+👉️copy-paste Dockerfile from folder8 to folder 9 server:
+Didn't paste here cz too big
+
+👉️in terminal: make build <-- building container for service
+
+👉️In MAKEFILE: 🙌️
+.PHONY:run
+run:
+	su-do docker run -p 50051:50051 -e MICRO_SERVER_ADDRESS=:50051 server   <---which will be runned in main.go by <---srvService.Init() and will link later different
+services(in our case server and client) with each other. <--when they run on different containners with different ports even.
+
+
+
+
+👉️➡️
+V client folder:
+peretaskivayem:
+Makefile iz servera:
+			.PHONY:proto
+			proto:
+				protoc --proto_path=. --go_out=. --micro_out=. proto/consignment/consignment.proto
+
+			.PHONY:build
+			build:
+				sudo docker build -t client .
+
+			.PHONY:run
+			run:
+				su-do docker run -p 50053:50051 -e MICRO_SERVER_ADDRESS=:50051 client		<-53 nash komp  51-docker container
+
+			.DEFAULT_GOAL := proto 
+
+teper daje  53 u klienta i 51 u servera -> oba vse ravno budut drug druga videt, cz of micro💪️
+
+👉️Peretasskivayem suda Dockerfile iz 6th folder:
+didn't paste here cz too big.
+
+
+👉️creating JSON file:
+👉️sozdayem 'command.json' 
+{
+    "description": "Second File", 
+    "weight": 222,
+    "containers": [
+        {"customer_id": "OOO Containers", "origin": "Moscow", "user_id": "OOO User"}
+    ], 
+    "vessel_id": "Na verkhu" 
+}
+
+
+👉️go mod init
+daleye -> go get -u
+
+
+👉️menayem main.go iznutri:
+const (
+	// address         = "localhost:50051"   👈️commentim hard coded port
+	defaultFilename = "command.json"
+)
+
+i dobavlayem etot kusok vmesto zakommichennogo podklucheniya: see in code🔔️
+		
+		        service := micro.NewService() {
+			    micro.Name("client"),
+			}
+
+			service.Init()
+
+			client := pb.NewShippingServicceClient("service", service.Client()) //nash (service -> "client") yavlayetsa clientom dla (servisa "server") 
+
+			...
+			...
+
+👉️in terminal: make <-- refreshing proto folder content
+		make build -> building container
+
+
+------------------------------------------------------------------------------
+
+🔔️creating lec10 folder and cp here server and client folders from lec9 (deleting in both go smod and go sum files)👆️
+
+👉️changing path for lec10 in both main.go files of client and server respectively
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+						 
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
